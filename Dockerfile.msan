@@ -1,0 +1,28 @@
+FROM ubuntu:22.04
+
+ARG CLANG_VER=18
+ARG CLANG_VER_FULL=18.1.8
+
+ENV CLANG_VER=${CLANG_VER}
+ENV CLANG_VER_FULL=${CLANG_VER_FULL}
+ENV CC=clang-${CLANG_VER}
+ENV CXX=clang++-${CLANG_VER}
+
+COPY ./scripts /scripts
+
+WORKDIR /
+
+# Update package index and install dependencies
+# Also see https://github.com/actions/runner-images/discussions/9446#discussioncomment-8668538
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates gpg wget unzip lsb-release software-properties-common gnupg git && \
+    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - |  tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
+    wget https://apt.llvm.org/llvm.sh && \
+    chmod +x ./llvm.sh && \
+    ./llvm.sh ${CLANG_VER} && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends clang-tidy-${CLANG_VER} libc++-${CLANG_VER}-dev libc++abi-${CLANG_VER}-dev cmake ninja-build && \
+    /scripts/configure_msan.sh
+
+ENTRYPOINT ["/scripts/msan_entrypoint.sh"]
