@@ -6,10 +6,17 @@ ENV CLANG_VER=${CLANG_VER}
 # Update package index and install dependencies
 # Also see https://github.com/actions/runner-images/discussions/9446#discussioncomment-8668538
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates gpg lsb-release wget software-properties-common gnupg && \
+    apt-get install -y --no-install-recommends ca-certificates gpg wget unzip lsb-release software-properties-common gnupg && \
+    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - |  tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
     wget https://apt.llvm.org/llvm.sh && \
     chmod +x ./llvm.sh && \
     ./llvm.sh ${CLANG_VER} && \
     apt-get update && \
-    apt-get install -y --no-install-recommends clang-tidy-${CLANG_VER} libc++-${CLANG_VER}-dev libc++abi-${CLANG_VER}-dev cmake
+    apt-get install -y --no-install-recommends clang-tidy-${CLANG_VER} libc++-${CLANG_VER}-dev libc++abi-${CLANG_VER}-dev cmake ninja-build jq
 
+ENV CC=clang-${CLANG_VER}
+ENV CXX=clang++-${CLANG_VER}
+
+# Set the entrypoint script
+ENTRYPOINT ["clang-tidy"]
