@@ -1,0 +1,15 @@
+FROM ubuntu:22.04
+
+ARG CLANG_VER=18
+ENV CLANG_VER=${CLANG_VER}
+
+# Update package index and install dependencies
+# Also see https://github.com/actions/runner-images/discussions/9446#discussioncomment-8668538
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates gpg lsb-release wget software-properties-common gnupg && \
+    wget https://apt.llvm.org/llvm.sh && \
+    chmod +x ./llvm.sh && \
+    ./llvm.sh ${CLANG_VER} && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends clang-tidy-${CLANG_VER} libc++-${CLANG_VER}-dev libc++abi-${CLANG_VER}-dev cmake
+
